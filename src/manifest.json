@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "2Han N8N Committer",
+  "version": "1.0",
+  "description": "Create commits for N8N workflows",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "options_page": "settings.html"
+}

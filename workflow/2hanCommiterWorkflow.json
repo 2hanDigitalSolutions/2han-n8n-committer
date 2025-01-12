@@ -1,0 +1,473 @@
+{
+  "name": "2hanCommiterWorkflow",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "get",
+        "workflowId": {
+          "__rl": true,
+          "value": "={{ $('Webhook').item.json.body.id }}",
+          "mode": "id"
+        },
+        "requestOptions": {}
+      },
+      "id": "5b391f8d-7150-4088-9079-a5cdaa50af52",
+      "name": "Get Workflow",
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [
+        620,
+        540
+      ],
+      "credentials": {
+        "n8nApi": {
+          "id": "xoThCXBfDc8GMoU2",
+          "name": "n8n account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "get",
+        "owner": {
+          "__rl": true,
+          "value": "={{ $('Webhook').item.json.body.owner }}",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "={{ $('Webhook').item.json.body.repository }}",
+          "mode": "name"
+        },
+        "filePath": "={{ $('Webhook').item.json.body.client }}/{{ $json.name.replaceAll(\" \", \"_\")}}-{{ $json.id }}.json",
+        "additionalParameters": {}
+      },
+      "id": "a94f6887-28df-4e80-82c8-9aa58db71de4",
+      "name": "Get Github Repository",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1,
+      "position": [
+        860,
+        340
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "UpQHjKk7mEgG7T8I",
+          "name": "GitHub account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "options": {}
+      },
+      "id": "6895ca16-77ce-410d-a462-25f971fcce84",
+      "name": "Extract Workflow File",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d55c571b-e214-48c5-9516-b16c71f5419e",
+              "name": "data",
+              "value": "={{ $json }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d7c0afc1-2321-4078-b36c-a252b1a36e2b",
+      "name": "Workflow data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1100,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "data.id",
+              "field2": "data.id"
+            }
+          ]
+        },
+        "resolve": "preferInput2",
+        "options": {}
+      },
+      "id": "500b9ab6-b8c4-40d4-8ff3-80904b90db89",
+      "name": "Compare Workflows",
+      "type": "n8n-nodes-base.compareDatasets",
+      "typeVersion": 2.3,
+      "position": [
+        1360,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.data }}",
+        "options": {}
+      },
+      "id": "7799d38f-27ca-489c-bda8-6fbcb9423d9a",
+      "name": "New Workflow",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1460,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.data }}",
+        "options": {}
+      },
+      "id": "8b9bc626-bb6a-42de-b9fe-4c87e1e088e2",
+      "name": "Modified Workflow",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1460,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true,
+          "fileName": "={{ $json.name.replaceAll(\" \", \"_\") }}-{{ $json.id }}.json"
+        }
+      },
+      "id": "03c980a0-92a6-400f-bcb3-cd139ad1494c",
+      "name": "Convert Modified Workflow to json",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1700,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true,
+          "fileName": "={{ $json.name.replaceAll(\" \", \"_\") }}-{{ $json.id }}.json"
+        }
+      },
+      "id": "3054e151-c2dd-4ab0-844a-14a493f8ca58",
+      "name": "Convert New Workflow to json",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1700,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "value": "={{ $('Webhook').item.json.body.owner }}",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "={{ $('Webhook').item.json.body.repository }}",
+          "mode": "name"
+        },
+        "filePath": "={{ $('Webhook').item.json.body.client }}/{{ $('Modified Workflow').item.json.name.replaceAll(\" \", \"_\") }}-{{ $('Modified Workflow').item.json.id }}.json",
+        "binaryData": true,
+        "commitMessage": "={{ $('Webhook').item.json.body.commit }}"
+      },
+      "id": "9bdd4bc2-f291-4650-ba68-84927ec999c9",
+      "name": "Commit Workflow",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1,
+      "position": [
+        1940,
+        200
+      ],
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "UpQHjKk7mEgG7T8I",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "owner": {
+          "__rl": true,
+          "value": "={{ $('Webhook').item.json.body.owner }}",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "={{ $('Webhook').item.json.body.repository }}",
+          "mode": "name"
+        },
+        "filePath": "={{ $('Webhook').item.json.body.client }}/{{ $('New Workflow').item.json.name.replaceAll(\" \", \"_\") }}-{{ $('New Workflow').item.json.id }}.json",
+        "binaryData": true,
+        "commitMessage": "=init"
+      },
+      "id": "2a179120-e6d5-40f2-b533-4fdcf2826745",
+      "name": "Commit Init",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1,
+      "position": [
+        1940,
+        680
+      ],
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "UpQHjKk7mEgG7T8I",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "bae59ce5-5e09-4aa0-829f-4a87956d6990",
+      "name": "Respond Commit data",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2140,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2han N8N Committer\n**Instructions** to edit me. [Read me!](https://github.com/2hanDigitalSolutions/2han-n8n-committer)",
+        "height": 107.9267600657961,
+        "width": 341.8600860051455,
+        "color": 5
+      },
+      "id": "0d30a295-efb4-47aa-994b-8beec582ab84",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        380,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "2hanN8N-Committer",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "24be7485-f1b7-4974-be7a-95a4d271043a",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        380,
+        540
+      ],
+      "webhookId": "8d9b28ec-cc45-48cc-87a9-27e06d235c35",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "GUFeUnAzFd5Q38xR",
+          "name": "2han N8N Committer apikey"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get Workflow": {
+      "main": [
+        [
+          {
+            "node": "Workflow data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Github Repository",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Github Repository": {
+      "main": [
+        [
+          {
+            "node": "Extract Workflow File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Workflow File": {
+      "main": [
+        [
+          {
+            "node": "Compare Workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow data": {
+      "main": [
+        [
+          {
+            "node": "Compare Workflows",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Compare Workflows": {
+      "main": [
+        [],
+        [],
+        [
+          {
+            "node": "Modified Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "New Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Workflow": {
+      "main": [
+        [
+          {
+            "node": "Convert New Workflow to json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modified Workflow": {
+      "main": [
+        [
+          {
+            "node": "Convert Modified Workflow to json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Modified Workflow to json": {
+      "main": [
+        [
+          {
+            "node": "Commit Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert New Workflow to json": {
+      "main": [
+        [
+          {
+            "node": "Commit Init",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Commit Workflow": {
+      "main": [
+        [
+          {
+            "node": "Respond Commit data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Commit Init": {
+      "main": [
+        [
+          {
+            "node": "Respond Commit data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "22dddca7-7b94-4a50-96b9-ccb783a04e46",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8c971b7563337e40fbd09703d3d51f536ebddf423466b4af38302e77d2a80d40"
+  },
+  "id": "IXKAnkSl7LpFpk6A",
+  "tags": []
+}
